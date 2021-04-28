@@ -14,7 +14,7 @@ import Setting from './Setting.js';
 
 const App = () => {
   const [ddayInfo, setDdayInfo] = useState({
-    dday: new Date().getDate(),
+    dday: new Date(),
     title: '테스트 디데이',
   });
   const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +34,22 @@ const App = () => {
     toggleModal();
   };
 
+  const makeDateString = () => {
+    return ddayInfo.dday.getFullYear() + '년' + (ddayInfo.dday.getMonth()+1) + '월 ' + ddayInfo.dday.getDate() + '일';
+  }
+
+  const makeRemainString = () => {
+    const distance = new Date().getTime() - ddayInfo.dday.getTime();
+    const remain = Math.floor(distance / (1000 * 60 * 60 * 24));
+    if (remain < 0) {
+      return 'D'+ remain;
+    } else if (remain > 0) {
+      return 'D+'+ remain;
+    } else if (remain === 0) {
+      return 'D-day';
+    }
+  }
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -46,8 +62,8 @@ const App = () => {
         </View>
         <View style={styles.ddayView}>
           <Text style={styles.titleText}>{ddayInfo.title}까지</Text>
-          <Text style={styles.ddayText}>{ddayInfo.dday}</Text>
-          <Text style={styles.dateText}>2020년 11월 32일</Text>
+          <Text style={styles.ddayText}>{makeRemainString()}</Text>
+          <Text style={styles.dateText}>{makeDateString()}</Text>
         </View>
         <View style={styles.chatView}>
           <ScrollView style={styles.chatScrollView}></ScrollView>
