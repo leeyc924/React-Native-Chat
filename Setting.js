@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 
-const Setting = ({ modalHandler, settingHandler }) => {
+const Setting = props => {
   const [ddayInfo, setDdayInfo] = useState({
     title: '',
     date: new Date(),
@@ -19,7 +19,7 @@ const Setting = ({ modalHandler, settingHandler }) => {
       <TouchableOpacity
         style={styles.background}
         activeOpacity={1}
-        onPress={modalHandler}
+        onPress={props.modalHandler}
       />
       <View style={styles.modal}>
         <Text style={styles.titleText}>설정</Text>
@@ -34,9 +34,13 @@ const Setting = ({ modalHandler, settingHandler }) => {
           }
           placeholder={'디데이 제목을 입력해주세요.'}
         />
-        <DatePicker date={ddayInfo.date} onDateChange={date => setDdayInfo(ddayInfo => ({ ...ddayInfo, date }))} mode="date" />
+        <DatePicker
+          date={ddayInfo.date}
+          onDateChange={date => setDdayInfo(ddayInfo => ({...ddayInfo, date}))}
+          mode="date"
+        />
         <TouchableOpacity
-          onPress={() => settingHandler(ddayInfo.title, ddayInfo.date)}>
+          onPress={() => props.settingHandler(ddayInfo.title, ddayInfo.date)}>
           <Text style={styles.doneText}>완료</Text>
         </TouchableOpacity>
       </View>

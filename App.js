@@ -1,5 +1,5 @@
 //App.js
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -10,6 +10,7 @@ import {
   ScrollView,
   ImageBackground,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Setting from './Setting.js';
 
 const App = () => {
@@ -19,36 +20,96 @@ const App = () => {
   });
   const [isOpen, setIsOpen] = useState(false);
   const [chatLog, setChatLog] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+
+  useEffect(() => {
+    const getStorageItem = async () => {
+      try {
+        const ddayString = await AsyncStorage.getItem('@dday');
+        const chatLogString = await AsyncStorage.getItem('@chat');
+        console.log(chatLogString);
+        if (chatLogString == null) {
+          setChatLog([]);
+        } else {
+          const chatLog = JSON.parse(chatLogString);
+          setChatLog(chatLog);
+        }
+
+        if (ddayString === null) {
+          setDdayInfo({
+            dday: new Date(),
+            title: '',
+          });
+        } else {
+          const dday = JSON.parse(ddayString);
+          setDdayInfo({
+            dday: new Date(dday.date),
+            title: dday.title,
+          });
+        }
+      } catch (e) {
+        console.log('ERR');
+      }
+    };
+
+    getStorageItem();
+  }, []);
 
   const toggleModal = () => {
     setIsOpen(isOpen => !isOpen);
   };
 
-  const settingHandler = (title, date) => {
-    console.log(title, date);
+  const settingHandler = async (title, date) => {
     setDdayInfo(ddayInfo => ({
       ...ddayInfo,
       title: title,
       dday: date,
     }));
+
+    try {
+      const dday = {
+        title: title,
+        date: date,
+      };
+      const ddayString = JSON.stringify(dday);
+      await AsyncStorage.setItem('@dday', ddayString);
+    } catch (e) {
+      console.log(e);
+    }
     toggleModal();
   };
 
   const makeDateString = () => {
-    return ddayInfo.dday.getFullYear() + '년' + (ddayInfo.dday.getMonth()+1) + '월 ' + ddayInfo.dday.getDate() + '일';
-  }
+    return (
+      ddayInfo.dday.getFullYear() +
+      '년' +
+      (ddayInfo.dday.getMonth() + 1) +
+      '월 ' +
+      ddayInfo.dday.getDate() +
+      '일'
+    );
+  };
 
   const makeRemainString = () => {
     const distance = new Date().getTime() - ddayInfo.dday.getTime();
     const remain = Math.floor(distance / (1000 * 60 * 60 * 24));
     if (remain < 0) {
-      return 'D'+ remain;
+      return 'D' + remain;
     } else if (remain > 0) {
-      return 'D+'+ remain;
+      return 'D+' + remain;
     } else if (remain === 0) {
       return 'D-day';
     }
-  }
+  };
+
+  const chatHandler = async () => {
+    const newChatLog = [...chatLog, makeDateString() + ' : ' + chatInput];
+    setChatLog(newChatLog);
+    setChatInput('');
+
+    const chatLogString = JSON.stringify(newChatLog);
+    await AsyncStorage.setItem('@chat', chatLogString);
+  };
 
   return (
     <View style={styles.container}>
@@ -66,16 +127,33 @@ const App = () => {
           <Text style={styles.dateText}>{makeDateString()}</Text>
         </View>
         <View style={styles.chatView}>
-          <ScrollView style={styles.chatScrollView}></ScrollView>
+          <ScrollView style={styles.chatScrollView}>
+            {chatLog.map((chat, index) => {
+              return (
+                <Text key={index} style={styles.chat}>
+                  {chat}
+                </Text>
+              );
+            })}
+          </ScrollView>
           <View style={styles.chatControl}>
-            <TextInput style={styles.chatInput} />
-            <TouchableOpacity style={styles.sendButton}>
+            <TextInput
+              style={styles.chatInput}
+              value={chatInput}
+              onChangeText={changedText =>
+                setChatInput(chatInput => changedText)
+              }
+            />
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={() => chatHandler()}>
               <Text>전송</Text>
             </TouchableOpacity>
           </View>
         </View>
         {isOpen && (
           <Setting
+            ddayInfo={ddayInfo}
             modalHandler={toggleModal}
             settingHandler={(title, date) => settingHandler(title, date)}
           />
@@ -89,6 +167,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
+  chat: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4A4A4A',
+    margin: 2,
+  },
+
   settingView: {
     flex: 1,
     justifyContent: 'center',
